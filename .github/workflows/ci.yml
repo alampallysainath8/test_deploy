@@ -1,5 +1,16 @@
+# ==============================================================================
+# GitHub Actions CI Workflow: Automated Testing and Docker Build Verification
+# ==============================================================================
+# Purpose:
+#   Validates every proposed change before it can merge into production.
+#   Runs unit tests and verifies that the Dockerfile builds successfully.
+# ==============================================================================
+
 name: CI
 
+# Triggers: Run this workflow on:
+# 1. Any direct push to the 'main' branch.
+# 2. Any pull request targeting the 'main' branch.
 on:
   push:
     branches: [ "main" ]
@@ -7,28 +18,42 @@ on:
     branches: [ "main" ]
 
 jobs:
+  # Job identifier: build-and-test
   build-and-test:
+    # Runs on a clean, GitHub-hosted virtual machine running the latest Ubuntu release.
     runs-on: ubuntu-latest
 
     steps:
+      # Step 1: Check out the repository code
+      # Downloads the project repository files to the runner so subsequent steps can access them.
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Set up the Python runtime
+      # Installs Python 3.12 and enables caching for pip packages to speed up future runs.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
 
+      # Step 3: Install application and testing dependencies
+      # Upgrades pip to the latest version, then installs all dependencies from requirements.txt.
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Step 4: Run unit tests
+      # Discovers and executes all pytest test cases in tests/test_health.py.
+      # If any assertion fails, the workflow terminates immediately with an error.
       - name: Run tests with pytest
         run: |
           pytest
 
-      - name: Build Docker image
+      # Step 5: Test-build the Docker image
+      # Ensures the Dockerfile has valid syntax, dependencies install properly,
+      # and the container can build without errors. Does NOT push the image anywhere.
+      - name: Build Docker image (Dry Run)
         run: |
           docker build -t fastapi-devops-lab:test .
